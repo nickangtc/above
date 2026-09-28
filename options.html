@@ -1,0 +1,22 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Above — site limits</title>
+  <link rel="stylesheet" href="options.css">
+</head>
+<body>
+  <main>
+    <header><span class="eyebrow">ABOVE</span><h1>Your site limits</h1><p>Keep the time you spend online intentional. Each limit resets at midnight in your computer's timezone.</p></header>
+    <form id="form">
+      <div id="sites"></div>
+      <div class="actions"><button type="button" id="add" class="secondary">+ Add site</button><button type="submit">Save limits</button></div>
+      <p id="notice" role="status" aria-live="polite"></p>
+    </form>
+    <p class="note">Include a domain (e.g. <strong>linkedin.com</strong>) to track it and all its subdomains. Only the active tab in the focused window counts, and timing pauses after 60 seconds without interaction. A five-minute active-use grace period is available once per site per day after the limit is reached. Removing a site does not erase today's recorded time if you add it back.</p>
+  </main>
+  <script src="core.js"></script>
+  <script src="options.js"></script>
+</body>
+</html>
