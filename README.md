@@ -20,7 +20,7 @@ A domain matches itself and its subdomains (`linkedin.com` includes `www.linkedi
 
 ## Privacy and limitations
 
-Above has no account, backend, analytics, network requests, or telemetry. Settings and daily counters live in Chrome's local extension storage (`chrome.storage.local`). It doesn't read page content or record the text you type: interaction listeners only mark that an event occurred. To make new domains editable without repeatedly requesting permissions, Chrome injects a lightweight script on HTTP(S) pages; that script only shows UI and counts time for saved domains. Chrome internal pages and other pages where Chrome disallows content scripts cannot be tracked.
+Above has no account, backend, analytics, network requests, or telemetry. Settings and daily counters live in Chrome's local extension storage (`chrome.storage.local`). It doesn't read page content or record the text you type: interaction listeners only mark that an event occurred. To make new domains editable without repeatedly requesting permissions, Chrome injects a lightweight script on HTTP or HTTPS pages; that script only shows UI and counts time for saved domains. Chrome internal pages and other pages where Chrome disallows content scripts cannot be tracked.
 
 This is a self-management tool: disabling the extension or modifying local storage defeats the block. If Chrome sleeps, closes, or suspends the service worker, Above does not charge a long unobserved interval as active time. The bar is an in-page overlay, so unusual browser top-layer UI may appear above it.
 
