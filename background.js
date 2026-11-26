@@ -5,10 +5,66 @@ let sites = [];
 let usage = {};
 let session = null; // { tabId, domain, lastTick, lastActivity }
 let queue = Promise.resolve();
-const ready = chrome.storage.local.get(["sites", "usage"]).then(data => {
+const FOCUS_RULE_ID = 1;
+const FOCUS_ALARM = "focus-expiry";
+const FOCUS_PAGE = chrome.runtime.getURL("focus.html");
+let focusBlock = null;
+const ready = chrome.storage.local.get(["sites", "usage", "focusBlock"]).then(async data => {
   sites = Array.isArray(data.sites) ? data.sites : [];
   usage = data.usage && typeof data.usage === "object" ? data.usage : {};
+  focusBlock = data.focusBlock || null;
+  await restoreFocusBlock();
+}).catch(error => console.error("Above startup:", error));
+
+function updateFocusRule(block) {
+  return chrome.declarativeNetRequest.updateDynamicRules({
+    removeRuleIds: [FOCUS_RULE_ID],
+    addRules: block ? [{
+      id: FOCUS_RULE_ID,
+      priority: 1,
+      action: { type: "redirect", redirect: { extensionPath: "/focus.html" } },
+      condition: { requestDomains: block.domains, urlFilter: "|http", resourceTypes: ["main_frame"] }
+    }] : []
+  });
+}
+
+async function endFocusBlock() {
+  await updateFocusRule(null);
+  await chrome.storage.local.remove("focusBlock");
+  focusBlock = null;
+  await chrome.alarms.clear(FOCUS_ALARM);
+}
+
+async function restoreFocusBlock() {
+  if (!focusBlock || focusBlock.until <= Date.now()) {
+    await endFocusBlock();
+    return;
+  }
+  await updateFocusRule(focusBlock);
+  await chrome.alarms.create(FOCUS_ALARM, { when: focusBlock.until });
+}
+
+function matchesFocus(url, block = focusBlock) {
+  return !!block && block.until > Date.now() && !!C.matchingSite(url, block.domains.map(domain => ({ domain })));
+}
+
+chrome.alarms.onAlarm.addListener(({ name }) => {
+  if (name === FOCUS_ALARM) enqueue(restoreFocusBlock);
 });
+
+// DNR is the first line of defense, but a site service worker can serve a
+// navigation without a network request. Catch those navigations as well.
+function enforceFocusNavigation({ tabId, frameId, url }) {
+  if (frameId !== 0 || !/^https?:\/\//i.test(url)) return;
+  enqueue(async () => {
+    if (!matchesFocus(url)) return;
+    const tab = await chrome.tabs.get(tabId).catch(() => null);
+    if (!tab || !matchesFocus(tab.pendingUrl || tab.url)) return;
+    await chrome.tabs.update(tabId, { url: FOCUS_PAGE }).catch(() => {});
+  });
+}
+chrome.webNavigation.onBeforeNavigate.addListener(enforceFocusNavigation);
+chrome.webNavigation.onCommitted.addListener(enforceFocusNavigation);
 
 // Serialize every transition, including storage writes. Events may arrive while another
 // event is awaiting Chrome APIs; charging the same interval twice is not acceptable.
@@ -52,6 +108,44 @@ function stateFor(url, now) {
 chrome.runtime.onMessage.addListener((message, sender, reply) => {
   enqueue(async () => {
     const now = Date.now();
+    if (message.type === "startFocusBlock") {
+      if (focusBlock?.until > now) throw new Error("End the current focus block first.");
+      const domains = Array.isArray(message.domains) ? message.domains.map(C.normalizeDomain) : [];
+      if (!domains.length || domains.length > 50 || domains.some(domain => !domain)) {
+        throw new Error("Enter up to 50 valid comma-separated site URLs or domains.");
+      }
+      if (![30, 60, 120, 240, 480].includes(message.minutes)) throw new Error("Choose a focus duration.");
+      const next = { domains: [...new Set(domains.map(domain => domain.replace(/^www\.(?=.+\.)/, "")))], until: now + message.minutes * 60_000 };
+      await updateFocusRule(next);
+      try {
+        await chrome.alarms.create(FOCUS_ALARM, { when: next.until });
+        await chrome.storage.local.set({ focusBlock: next });
+      } catch (error) {
+        await updateFocusRule(null);
+        await chrome.alarms.clear(FOCUS_ALARM);
+        throw error;
+      }
+      focusBlock = next;
+      if (session) {
+        const tab = await chrome.tabs.get(session.tabId).catch(() => null);
+        if (matchesFocus(tab?.url)) {
+          settle(now);
+          session = null;
+          await persist();
+        }
+      }
+      // Already-open documents won't navigate through the new rule on their own.
+      const tabs = await chrome.tabs.query({});
+      await Promise.allSettled(tabs.filter(tab => matchesFocus(tab.pendingUrl || tab.url))
+        .map(tab => chrome.tabs.update(tab.id, { url: FOCUS_PAGE })));
+      return focusBlock;
+    }
+    if (message.type === "endFocusBlock") {
+      await endFocusBlock();
+      return null;
+    }
+    if ((message.type === "pulse" || message.type === "claimGrace") &&
+        (matchesFocus(sender.url) || matchesFocus(sender.tab?.url))) return null;
     if (message.type === "pulse" && sender.tab?.id != null) {
       const tab = sender.tab;
       const site = C.matchingSite(tab.url || sender.url, sites);

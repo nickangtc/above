@@ -3,6 +3,32 @@
   const list = document.getElementById("sites");
   const notice = document.getElementById("notice");
   const C = globalThis.AboveCore;
+  const focusInput = document.getElementById('focus-sites');
+  const focusStatus = document.getElementById('focus-status');
+  const focusToggle = document.getElementById('focus-toggle');
+  const focusDuration = document.getElementById('focus-duration');
+  let focusActive = false;
+  function renderFocus(block) {
+    focusActive = !!block && block.until > Date.now();
+    focusInput.disabled = focusDuration.disabled = focusActive;
+    if (focusActive) focusInput.value = block.domains.join(', ');
+    focusStatus.textContent = focusActive ? `Focus block ends at ${new Date(block.until).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.` : '';
+    focusToggle.textContent = focusActive ? 'End focus block' : 'Start focusing';
+  }
+  chrome.storage.onChanged.addListener((changes, area) => {
+    if (area === 'local' && changes.focusBlock) renderFocus(changes.focusBlock.newValue);
+  });
+  focusToggle.addEventListener('click', async () => {
+    focusToggle.disabled = true;
+    try {
+      const block = focusActive ? await message('endFocusBlock') : await message('startFocusBlock', {
+        domains: focusInput.value.split(','), minutes: Number(focusDuration.value)
+      });
+      renderFocus(block);
+    } catch (error) { focusStatus.textContent = error.message; }
+    finally { focusToggle.disabled = false; }
+  });
+  chrome.storage.local.get('focusBlock').then(({ focusBlock }) => renderFocus(focusBlock));
   function row(domain = "", minutes = 60) {
     const el = document.createElement("div");
     el.className = "row";

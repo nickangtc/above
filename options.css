@@ -1,1 +1,46 @@
+.focus {
+  position: relative;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 39%;
+  margin: 26px 0;
+  overflow: hidden;
+  border: 1px solid #cedacf;
+  border-radius: 20px;
+  background: linear-gradient(145deg, #f8faf1, #e8efe4);
+  color: #213d31;
+  box-shadow: 0 12px 32px #284b3612;
+}
+.focus-controls { padding: clamp(20px, 4vw, 32px); }
+.focus-eyebrow { color: #426451; font-size: 11px; font-weight: 750; letter-spacing: .18em; text-transform: uppercase; }
+.focus h2 { margin: 4px 0 6px; font: 500 clamp(29px, 5vw, 38px)/1.1 Georgia, serif; }
+.focus p { margin: 0 0 18px; color: #405b4d; font-size: 14px; }
+.focus label span { color: #405b4d; font-weight: 400; }
+.focus input, .focus select { padding: 9px 11px; border: 1px solid #8da594; border-radius: 9px; background: #fcfdf8; color: #213d31; font: inherit; font-size: 14px; }
+.focus input::placeholder { color: #52675b; }
+.focus :is(input, select):disabled { opacity: 1; background: #e3ebe0; color: #405b4d; -webkit-text-fill-color: #405b4d; }
+.focus-actions { display: flex; align-items: stretch; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
+.focus button { background: #29563f; border-radius: 9px; }
+.focus button:hover:not(:disabled) { background: #204733; }
+.focus :is(button, input, select):focus-visible { outline: 2px solid #29563f; outline-offset: 2px; }
+.focus .focus-status:empty { margin: 0; }
+.focus .focus-status:not(:empty) { margin: 13px 0 0; font-size: 13px; font-weight: 600; overflow-wrap: anywhere; }
+.focus-grove { position: absolute; right: 0; top: 0; width: 39%; height: 100%; display: block; background: #dbe5d1; }
+@media (max-width: 520px) {
+  .focus { grid-template-columns: minmax(0, 1fr); }
+  .focus-grove { position: static; width: 100%; height: clamp(155px, 48vw, 220px); }
+}
+@media (prefers-reduced-motion: no-preference) {
+  .grove-butterfly { animation: grove-drift 4.8s ease-in-out; }
+  .grove-butterfly-small { animation-direction: reverse; }
+  .grove-wings { transform-box: fill-box; transform-origin: center; animation: grove-flutter 1.2s ease-in-out 4; }
+}
+@keyframes grove-drift {
+  0%, 100% { transform: translate(0, 0); }
+  45% { transform: translate(9px, -10px); }
+  73% { transform: translate(3px, -6px); }
+}
+@keyframes grove-flutter {
+  0%, 52%, 100% { transform: scaleX(1); }
+  24%, 76% { transform: scaleX(.64); }
+}
 :root { font: 16px/1.5 system-ui, -apple-system, sans-serif; color: #172335; background: #f3f6fa; } * { box-sizing: border-box; } body { margin: 0; } main { max-width: 720px; margin: 60px auto; padding: 0 24px; } .eyebrow { color: #0a66c2; font-weight: 800; letter-spacing: .2em; } h1 { font-size: 38px; margin: 8px 0; } header p, .note { color: #54637a; } form { margin-top: 32px; background: white; padding: 24px; border-radius: 16px; box-shadow: 0 8px 30px #17233512; } .row { display: grid; grid-template-columns: minmax(130px, 1fr) 125px auto; gap: 12px; align-items: end; margin-bottom: 18px; } label { display: block; font-weight: 650; font-size: 13px; } input { display: block; width: 100%; padding: 10px; margin-top: 5px; border: 1px solid #b5c3d4; border-radius: 7px; font: inherit; } button { border: 0; border-radius: 7px; padding: 12px 16px; background: #0a66c2; color: white; font: 650 14px system-ui; cursor: pointer; } button.secondary { background: #e7eef7; color: #172335; } button:focus-visible, input:focus-visible { outline: 2px solid #0a66c2; outline-offset: 2px; } .actions { display: flex; justify-content: space-between; gap: 12px; } #notice { min-height: 1.5em; color: #a52a30; margin-bottom: 0; } #notice.success { color: #227045; } .note { font-size: 14px; margin-top: 24px; } @media (max-width: 520px) { main { margin: 28px auto; } .row { grid-template-columns: 1fr 100px; } .row button { grid-column: 1 / -1; } }

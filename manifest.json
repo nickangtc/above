@@ -3,7 +3,11 @@
   "name": "Above",
   "version": "0.1.0",
   "description": "Stay above your daily time limits on the sites you choose.",
-  "permissions": ["storage", "tabs"],
+  "permissions": ["storage", "tabs", "alarms", "declarativeNetRequestWithHostAccess", "webNavigation"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "web_accessible_resources": [
+    { "resources": ["focus.html"], "matches": ["http://*/*", "https://*/*"] }
+  ],
   "background": { "service_worker": "background.js" },
   "action": {
     "default_title": "Above — manage site limits",
