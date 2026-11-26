@@ -16,7 +16,7 @@ A domain matches itself and its subdomains (`linkedin.com` includes `www.linkedi
 - **Active time, not tab-open time.** Only the visible active tab in a focused Chrome window counts. Opening or refocusing it starts a session. Scrolling, mouse movement, clicking, typing, and touch renew activity; counting pauses 60 seconds after the last interaction, on leaving the site, or when the tab/window loses focus. Two tabs cannot double-count time.
 - **Live progress.** A thin bar spans the top of each tracked page. It refreshes every five seconds (at most roughly ten seconds of latency around browser scheduling). Blue is the default. Hover over or keyboard-focus the bar to see time used, time remaining, and a pacing explanation. At 90% of the budget it glimmers once every five seconds.
 - **Pacing warning.** Yellow means the fraction of the site's daily budget already used exceeds the fraction of the *local calendar day* already elapsed. This is a linear projection from midnight: if that average rate continues, the budget runs out before midnight. The tooltip estimates how long until that happens. This is a simple heuristic, not a prediction of what you will actually do next. For clarity, 15 minutes of a 60-minute budget at 8:30 AM is **blue** under this rule (25% used versus about 35% of the day elapsed), despite the original motivating example describing yellow; that example would require a different warning threshold or a different rate baseline.
-- **Limit and grace.** At the limit, an overlay blocks the page. You can claim one five-minute grace period **per site per day** to finish a post or reply. Only active use consumes those five minutes. When it expires, the overlay returns with no second claim. Each site's usage and grace reset at local midnight, including across browser restarts.
+- **Limit and grace.** At the limit, an overlay blocks the page. You can claim one five-minute grace period **per site per day** to finish a post or reply. Only active use consumes those five minutes. When it expires, the overlay returns with no second claim. Each site's usage and grace reset at local midnight, including across browser restarts. If a tab was asleep across midnight, it clears the previous day's UI when it wakes and ignores any delayed status response from the old day.
 
 ## Privacy and limitations
 
@@ -29,10 +29,10 @@ This is a self-management tool: disabling the extension or modifying local stora
 This is a plain JavaScript Manifest V3 extension with no dependencies or build step:
 
 - `manifest.json` declares the extension, options page, content script, and service worker.
-- `content.js` collects interaction signals, requests a status every five seconds, and renders the bar, tooltip, and blocker in an isolated shadow root. It does not decide how much time to charge.
+- `content.js` collects interaction signals, requests a status every five seconds, and renders the bar, tooltip, and blocker in an isolated shadow root. It does not decide how much time to charge. It refreshes on page wake/focus and guards against stale prior-day responses so yesterday's grace UI cannot reappear after midnight.
 - `background.js` owns the authoritative counters, focus/tab transitions, daily grace claims, settings validation, and serialized writes to Chrome storage. The serialization prevents overlapping events from charging the same interval twice.
-- `core.js` contains the domain matching, local-day boundary, charging, and pacing rules; it is shared with the Node tests in `test/core.test.js`. Charging caps any unobserved gap at ten seconds, ends at the idle cutoff, and splits spans across local midnight (including DST boundaries).
-- `options.html`, `options.css`, and `options.js` provide the editable site list. There is no bundler or package installation.
+- `core.js` contains the domain matching, local-day boundary, charging, and pacing rules; it is shared with the Node tests in `test/core.test.js`. Status includes its local calendar date so the content script can reject stale responses. Charging caps any unobserved gap at ten seconds, ends at the idle cutoff, and splits spans across local midnight (including DST boundaries).
+- `options.html`, `options.css`, and `options.js` provide the editable site list and focus controls. There is no bundler or package installation.
 
 Run checks from the repository root:
 
