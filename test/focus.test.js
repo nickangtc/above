@@ -50,6 +50,8 @@ test('focus installs a main-frame redirect, does not charge usage, and removes t
   const w = worker();
   const start = await w.send('startFocusBlock', { domains: ['https://www.linkedin.com/feed/', 'x.com'], minutes: 60 });
   assert.equal(start.ok, true);
+  assert.equal(start.value.until - start.value.startedAt, 60 * 60_000);
+  assert.equal(w.storage.focusBlock.startedAt, start.value.startedAt);
   assert.deepEqual(Array.from(w.rule.condition.requestDomains), ['linkedin.com', 'x.com']);
   assert.deepEqual(Array.from(w.rule.condition.resourceTypes), ['main_frame']);
   assert.equal(w.rule.action.redirect.extensionPath, '/focus.html');

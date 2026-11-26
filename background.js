@@ -115,7 +115,7 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
         throw new Error("Enter up to 50 valid comma-separated site URLs or domains.");
       }
       if (![30, 60, 120, 240, 480].includes(message.minutes)) throw new Error("Choose a focus duration.");
-      const next = { domains: [...new Set(domains.map(domain => domain.replace(/^www\.(?=.+\.)/, "")))], until: now + message.minutes * 60_000 };
+      const next = { domains: [...new Set(domains.map(domain => domain.replace(/^www\.(?=.+\.)/, "")))], startedAt: now, until: now + message.minutes * 60_000 };
       await updateFocusRule(next);
       try {
         await chrome.alarms.create(FOCUS_ALARM, { when: next.until });

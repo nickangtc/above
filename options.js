@@ -7,13 +7,45 @@
   const focusStatus = document.getElementById('focus-status');
   const focusToggle = document.getElementById('focus-toggle');
   const focusDuration = document.getElementById('focus-duration');
+  const focusProgress = document.getElementById('focus-progress');
+  const focusCard = focusProgress.closest('.focus');
+  const progressRects = focusProgress.querySelectorAll('rect');
   let focusActive = false;
+  let currentFocusBlock = null;
+
+  function sizeFocusProgress() {
+    for (const rect of progressRects) {
+      rect.setAttribute('width', Math.max(0, focusCard.clientWidth - 4));
+      rect.setAttribute('height', Math.max(0, focusCard.clientHeight - 4));
+    }
+  }
+  new ResizeObserver(sizeFocusProgress).observe(focusCard);
+
+  function updateFocusProgress() {
+    if (!currentFocusBlock) return;
+    const { startedAt, until } = currentFocusBlock;
+    const remaining = until - Date.now();
+    if (remaining <= 0) { renderFocus(null); return; }
+    // Sessions created before the ring was added don't have a known start time.
+    if (!Number.isFinite(startedAt) || startedAt >= until) return;
+    const percent = Math.min(100, remaining / (until - startedAt) * 100);
+    progressRects[1].style.strokeDashoffset = 100 - percent;
+    focusProgress.setAttribute('aria-valuenow', Math.ceil(percent));
+    focusProgress.setAttribute('aria-valuetext', `${Math.ceil(remaining / 60_000)} minutes remaining`);
+    focusProgress.removeAttribute('hidden');
+  }
+  setInterval(updateFocusProgress, 1000);
+  document.addEventListener('visibilitychange', updateFocusProgress);
+
   function renderFocus(block) {
     focusActive = !!block && block.until > Date.now();
+    currentFocusBlock = focusActive ? block : null;
+    focusProgress.setAttribute('hidden', '');
     focusInput.disabled = focusDuration.disabled = focusActive;
     if (focusActive) focusInput.value = block.domains.join(', ');
     focusStatus.textContent = focusActive ? `Focus block ends at ${new Date(block.until).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.` : '';
     focusToggle.textContent = focusActive ? 'End focus block' : 'Start focusing';
+    updateFocusProgress();
   }
   chrome.storage.onChanged.addListener((changes, area) => {
     if (area === 'local' && changes.focusBlock) renderFocus(changes.focusBlock.newValue);
