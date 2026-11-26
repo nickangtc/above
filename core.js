@@ -87,7 +87,7 @@
     const elapsed = now - startOfDay(now);
     const etaMs = today.usedMs > 0 ? Math.max(0, quota * elapsed / today.usedMs - elapsed) : null;
     return {
-      domain: site.domain, minutes: site.minutes, usedMs: today.usedMs,
+      date: today.date, domain: site.domain, minutes: site.minutes, usedMs: today.usedMs,
       remainingMs: Math.max(0, quota - today.usedMs), fraction, yellow,
       glimmer: fraction >= 0.9 && !blocked, blocked,
       graceClaimed: today.graceClaimed,

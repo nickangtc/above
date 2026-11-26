@@ -51,12 +51,19 @@
   let lastSentInput = 0;
   let busy = false;
   let current = null;
+  const localDay = () => {
+    const d = new Date();
+    return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+  };
+  let displayedDay = localDay();
   const fmt = ms => {
     const minutes = Math.ceil(ms / 60_000);
     return minutes >= 60 ? `${Math.floor(minutes / 60)}h ${minutes % 60}m` : `${minutes}m`;
   };
 
   function render(state) {
+    // A delayed response from before midnight must not restore yesterday's grace UI.
+    if (state && state.date !== localDay()) return;
     current = state;
     if (!state) {
       bar.remove();
@@ -86,6 +93,14 @@
     } else overlay.remove();
   }
 
+  function refreshDay() {
+    const today = localDay();
+    if (today !== displayedDay) {
+      displayedDay = today;
+      render(null); // Drop yesterday's overlay immediately, even if Chrome was asleep.
+    }
+  }
+
   async function send(type, extra = {}) {
     try {
       const response = await chrome.runtime.sendMessage({ type, ...extra });
@@ -94,13 +109,15 @@
   }
 
   async function pulse() {
+    refreshDay();
     if (busy) return;
     busy = true;
     const visible = document.visibilityState === "visible";
-    const activity = visible && lastInput > lastSentInput;
+    const sentInput = lastInput;
+    const activity = visible && sentInput > lastSentInput;
     try {
       await send("pulse", { visible, activity });
-      if (activity) lastSentInput = lastInput;
+      if (activity) lastSentInput = sentInput;
     } finally { busy = false; }
   }
 
@@ -113,6 +130,7 @@
   }
   document.addEventListener("visibilitychange", pulse);
   window.addEventListener("focus", () => { lastInput = Date.now(); pulse(); });
+  window.addEventListener("pageshow", () => { lastInput = Date.now(); pulse(); });
   window.addEventListener("pagehide", () => send("pulse", { visible: false }));
   graceButton.addEventListener("click", () => send("claimGrace"));
   document.documentElement.append(host);

@@ -83,3 +83,22 @@ test('appendFocusDomain appends cleanly and avoids duplicates across URL/www var
   assert.equal(C.appendFocusDomain('https://www.linkedin.com/feed', 'linkedin.com'), 'https://www.linkedin.com/feed');
   assert.equal(C.appendFocusDomain('linkedin.com, x.com', 'WWW.X.COM'), 'linkedin.com, x.com');
 });
+
+test('unfinished grace yesterday is not carried into today on X or LinkedIn', () => {
+  const evening = at(23, 30);
+  const morning = new Date(2026, 8, 29, 9).getTime();
+  for (const domain of ['x.com', 'linkedin.com']) {
+    const tracked = { domain, minutes: 60 };
+    const yesterday = { ...C.freshUsage(evening), usedMs: 60 * 60_000,
+      graceClaimed: true, graceUsedMs: 2 * 60_000 };
+    // A fresh request, or an old session settling after an overnight browser pause.
+    for (const today of [C.usageForDay(yesterday, morning), C.charge(yesterday, tracked, evening, morning, evening)]) {
+      const state = C.status(tracked, today, morning);
+      assert.equal(state.date, C.dayKey(morning));
+      assert.equal(state.usedMs, 0);
+      assert.equal(state.graceClaimed, false);
+      assert.equal(state.graceRemainingMs, C.GRACE_MS);
+      assert.equal(state.blocked, false);
+    }
+  }
+});
