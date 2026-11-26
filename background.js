@@ -9,10 +9,12 @@ const FOCUS_RULE_ID = 1;
 const FOCUS_ALARM = "focus-expiry";
 const FOCUS_PAGE = chrome.runtime.getURL("focus.html");
 let focusBlock = null;
-const ready = chrome.storage.local.get(["sites", "usage", "focusBlock"]).then(async data => {
+let focusDomainCounts = {};
+const ready = chrome.storage.local.get(["sites", "usage", "focusBlock", "focusDomainCounts"]).then(async data => {
   sites = Array.isArray(data.sites) ? data.sites : [];
   usage = data.usage && typeof data.usage === "object" ? data.usage : {};
   focusBlock = data.focusBlock || null;
+  focusDomainCounts = data.focusDomainCounts && typeof data.focusDomainCounts === "object" ? data.focusDomainCounts : {};
   await restoreFocusBlock();
 }).catch(error => console.error("Above startup:", error));
 
@@ -110,22 +112,27 @@ chrome.runtime.onMessage.addListener((message, sender, reply) => {
     const now = Date.now();
     if (message.type === "startFocusBlock") {
       if (focusBlock?.until > now) throw new Error("End the current focus block first.");
-      const domains = Array.isArray(message.domains) ? message.domains.map(C.normalizeDomain) : [];
+      const domains = Array.isArray(message.domains) ? message.domains.map(C.focusDomain) : [];
       if (!domains.length || domains.length > 50 || domains.some(domain => !domain)) {
         throw new Error("Enter up to 50 valid comma-separated site URLs or domains.");
       }
       if (![30, 60, 120, 240, 480].includes(message.minutes)) throw new Error("Choose a focus duration.");
-      const next = { domains: [...new Set(domains.map(domain => domain.replace(/^www\.(?=.+\.)/, "")))], startedAt: now, until: now + message.minutes * 60_000 };
+      const next = { domains: [...new Set(domains)], startedAt: now, until: now + message.minutes * 60_000 };
+      const nextCounts = { ...focusDomainCounts };
+      for (const domain of next.domains) {
+        nextCounts[domain] = (Number(nextCounts[domain]) || 0) + 1;
+      }
       await updateFocusRule(next);
       try {
         await chrome.alarms.create(FOCUS_ALARM, { when: next.until });
-        await chrome.storage.local.set({ focusBlock: next });
+        await chrome.storage.local.set({ focusBlock: next, focusDomainCounts: nextCounts });
       } catch (error) {
         await updateFocusRule(null);
         await chrome.alarms.clear(FOCUS_ALARM);
         throw error;
       }
       focusBlock = next;
+      focusDomainCounts = nextCounts;
       if (session) {
         const tab = await chrome.tabs.get(session.tabId).catch(() => null);
         if (matchesFocus(tab?.url)) {

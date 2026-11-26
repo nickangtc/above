@@ -97,6 +97,38 @@
     };
   }
 
-  root.AboveCore = { IDLE_MS, GRACE_MS, dayKey, normalizeDomain, matchingSite, freshUsage, usageForDay, charge, status };
+  function focusDomain(input) {
+    const domain = normalizeDomain(input);
+    return domain ? domain.replace(/^www\.(?=.+\.)/, "") : null;
+  }
+
+  function topFocusDomains(counts, limit = 10) {
+    if (!counts || typeof counts !== "object") return [];
+    return Object.entries(counts)
+      .map(([domain, count]) => ({ domain: focusDomain(domain), count: Number(count) }))
+      .filter(entry => entry.domain && Number.isFinite(entry.count) && entry.count > 0)
+      .sort((a, b) => b.count - a.count || a.domain.localeCompare(b.domain))
+      .slice(0, limit);
+  }
+
+  function focusInputDomains(input) {
+    return new Set(String(input || "").split(",").map(focusDomain).filter(Boolean));
+  }
+
+  function appendFocusDomain(input, domain) {
+    const target = focusDomain(domain);
+    if (!target) return String(input || "");
+    const raw = String(input || "");
+    if (focusInputDomains(raw).has(target)) return raw;
+    const parts = raw.split(",").map(part => part.trim()).filter(Boolean);
+    parts.push(target);
+    return parts.join(", ");
+  }
+
+  root.AboveCore = {
+    IDLE_MS, GRACE_MS, dayKey, normalizeDomain, focusDomain,
+    topFocusDomains, focusInputDomains, appendFocusDomain,
+    matchingSite, freshUsage, usageForDay, charge, status
+  };
   if (typeof module !== "undefined") module.exports = root.AboveCore;
 })(globalThis);

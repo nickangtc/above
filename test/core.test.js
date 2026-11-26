@@ -59,3 +59,27 @@ test('local midnight resets usage and grace', () => {
   assert.equal(u.graceClaimed, false);
   assert.equal(C.status(site, u, before + 5_000).blocked, false);
 });
+
+test('topFocusDomains ranks by count, caps at 10, and breaks ties alphabetically', () => {
+  const counts = {};
+  for (let i = 1; i <= 12; i++) counts[`site${String(i).padStart(2, '0')}.com`] = i;
+  counts['alpha.com'] = 10;
+  counts['zero.com'] = 0;
+  const top = C.topFocusDomains(counts);
+  assert.equal(top.length, 10);
+  assert.deepEqual(top[0], { domain: 'site12.com', count: 12 });
+  assert.deepEqual(top[1], { domain: 'site11.com', count: 11 });
+  assert.deepEqual(top[2], { domain: 'alpha.com', count: 10 });
+  assert.deepEqual(top[3], { domain: 'site10.com', count: 10 });
+  assert.deepEqual(top[9], { domain: 'site04.com', count: 4 });
+  assert.equal(Object.keys(counts).length, 14);
+});
+
+test('appendFocusDomain appends cleanly and avoids duplicates across URL/www variants', () => {
+  assert.equal(C.appendFocusDomain('', 'linkedin.com'), 'linkedin.com');
+  assert.equal(C.appendFocusDomain('   ', 'linkedin.com'), 'linkedin.com');
+  assert.equal(C.appendFocusDomain('linkedin.com', 'x.com'), 'linkedin.com, x.com');
+  assert.equal(C.appendFocusDomain('linkedin.com, ', 'x.com'), 'linkedin.com, x.com');
+  assert.equal(C.appendFocusDomain('https://www.linkedin.com/feed', 'linkedin.com'), 'https://www.linkedin.com/feed');
+  assert.equal(C.appendFocusDomain('linkedin.com, x.com', 'WWW.X.COM'), 'linkedin.com, x.com');
+});

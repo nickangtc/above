@@ -3,23 +3,48 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>Above — site limits</title>
+  <title>Above — Site limits</title>
   <link rel="stylesheet" href="options.css">
 </head>
 <body>
   <main>
-    <header><span class="eyebrow">ABOVE</span><h1>Your site limits</h1><p>Keep the time you spend online intentional. Each limit resets at midnight in your computer's timezone.</p></header>
-    <section class="focus" aria-labelledby="focus-title">
+    <header class="page-header">
+      <div class="brand">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <span class="eyebrow">Above</span>
+      </div>
+      <h1>Intentional time online</h1>
+      <p>Set quiet boundaries for the sites that pull your attention. Daily limits reset at midnight in your local timezone.</p>
+    </header>
+
+    <section class="card focus" aria-labelledby="focus-title">
       <svg id="focus-progress" class="focus-progress" role="progressbar" aria-label="Focus time remaining" aria-valuemin="0" aria-valuemax="100" hidden>
-        <rect x="2" y="2" rx="17" pathLength="100" class="focus-progress-track"/>
-        <rect x="2" y="2" rx="17" pathLength="100" class="focus-progress-fill"/>
+        <rect x="2" y="2" rx="14" pathLength="100" class="focus-progress-track"/>
+        <rect x="2" y="2" rx="14" pathLength="100" class="focus-progress-fill"/>
+      </svg>
+      <svg class="focus-motif" viewBox="0 0 320 320" aria-hidden="true" focusable="false">
+        <g fill="none" stroke="currentColor" stroke-width="1">
+          <circle cx="240" cy="80" r="56" opacity=".32"/>
+          <circle cx="240" cy="80" r="96" opacity=".24"/>
+          <circle cx="240" cy="80" r="136" opacity=".17"/>
+          <circle cx="240" cy="80" r="176" opacity=".11"/>
+          <circle cx="240" cy="80" r="216" opacity=".06"/>
+        </g>
       </svg>
       <div class="focus-controls">
-        <span class="focus-eyebrow">Intentional time</span>
-        <h2 id="focus-title">Focus block</h2>
-        <p>Set a few sites aside and make room for what matters.</p>
-        <label for="focus-sites">Sites to block <span>(comma-separated)</span></label>
-        <input id="focus-sites" type="text" placeholder="linkedin.com, x.com" spellcheck="false" autocapitalize="none">
+        <div class="section-head">
+          <span class="section-eyebrow">Focus session</span>
+          <h2 id="focus-title">Focus block</h2>
+          <p>Temporarily set aside distracting sites for a stretch of uninterrupted work.</p>
+        </div>
+        <div class="field">
+          <label for="focus-sites">Sites to block <span class="hint">comma-separated</span></label>
+          <input id="focus-sites" type="text" placeholder="linkedin.com, x.com" spellcheck="false" autocapitalize="none">
+        </div>
+        <div id="focus-frequent" class="focus-frequent" hidden>
+          <span class="focus-frequent-label">Frequently blocked</span>
+          <div id="focus-chips" class="focus-chips" role="group" aria-label="Frequently blocked sites"></div>
+        </div>
         <div class="focus-actions">
           <select id="focus-duration" aria-label="Focus duration">
             <option value="30">30 minutes</option>
@@ -32,54 +57,22 @@
         </div>
         <p id="focus-status" class="focus-status" role="status"></p>
       </div>
-      <svg class="focus-grove" viewBox="0 0 260 300" preserveAspectRatio="xMidYMax slice" aria-hidden="true" focusable="false">
-        <defs>
-          <linearGradient id="grove-sky" x2="0" y2="1">
-            <stop stop-color="#f6eccd"/><stop offset=".74" stop-color="#dbe5d1"/>
-          </linearGradient>
-          <path id="grove-pine" d="M0-96-18-59h9l-18 25h13l-19 24h30V0h6v-10h30L14-34h13L9-59h9Z"/>
-          <g id="grove-wing">
-            <path d="M0 1C-4-8-12-14-17-12c-1 6 3 10 9 13-5-1-8 2-6 6C-10 11-4 7 0 1Z"/>
-            <path d="M-14-9Q-9-8-2 0M-11 6Q-7 6-2 2" fill="none" opacity=".65"/>
-          </g>
-        </defs>
-        <path fill="url(#grove-sky)" d="M0 0h260v300H0z"/>
-        <circle cx="180" cy="79" r="33" fill="#f8edc7"/>
-        <circle cx="180" cy="79" r="41" fill="none" stroke="#fbf3dc" opacity=".85"/>
-        <path fill="#c6d3be" d="M0 177q37-66 82-42 43 27 87 1 57-33 91 2v162H0Z"/>
-        <path fill="#a8bea6" d="M0 190q72 25 127-9 77-43 133-26v145H0Z"/>
-        <g fill="#75947d">
-          <use href="#grove-pine" transform="translate(213 211) scale(.7)"/>
-          <use href="#grove-pine" transform="translate(244 217) scale(.95)"/>
-          <use href="#grove-pine" transform="translate(28 234) scale(.62)"/>
-        </g>
-        <path fill="#86a48a" d="M0 226q67-24 142 1 64 22 118-9v82H0Z"/>
-        <path fill="#6d9076" d="M0 267q60-38 130-17t130-8v58H0Z"/>
-        <path fill="#c4ceb1" d="M162 244c-46 11-70 23-43 32 30 10 59 12 75 24h-74c5-7-10-13-22-19-29-15 5-27 64-37Z"/>
-        <g fill="#426c54">
-          <use href="#grove-pine" transform="translate(53 266) scale(1.25)"/>
-          <use href="#grove-pine" transform="translate(12 283) scale(.84)"/>
-          <use href="#grove-pine" transform="translate(251 288) scale(.72)"/>
-        </g>
-        <g fill="none" stroke="#e7e5c4" stroke-linecap="round" opacity=".65">
-          <path d="m67 279 5 6m3-11 2 8m119-23 4 5m6-7-2 6m24 25 3 5m4-6v4"/>
-          <path d="M100 103q4-4 8 0 4-4 8 0"/>
-        </g>
-        <g transform="translate(139 183) rotate(-18)"><g class="grove-butterfly">
-          <g class="grove-wings" fill="#d5b784" stroke="#725c42" stroke-width=".75"><use href="#grove-wing"/><use href="#grove-wing" transform="scale(-1 1)"/></g>
-          <path d="M0-4v10" stroke="#614535" stroke-width="1.4" stroke-linecap="round"/>
-        </g></g>
-        <g transform="translate(198 211) rotate(20) scale(.65)"><g class="grove-butterfly grove-butterfly-small">
-          <g class="grove-wings" fill="#e2d9bc" stroke="#725c42" stroke-width=".9"><use href="#grove-wing"/><use href="#grove-wing" transform="scale(-1 1)"/></g>
-          <path d="M0-4v10" stroke="#614535" stroke-width="1.5" stroke-linecap="round"/>
-        </g></g>
-      </svg>
     </section>
-    <form id="form">
+
+    <form id="form" class="card limits" aria-labelledby="limits-title">
+      <div class="section-head">
+        <span class="section-eyebrow">Daily budgets</span>
+        <h2 id="limits-title">Site limits</h2>
+        <p>Track active foreground time per domain and pause gently once your daily budget is reached.</p>
+      </div>
       <div id="sites"></div>
-      <div class="actions"><button type="button" id="add" class="secondary">+ Add site</button><button type="submit">Save limits</button></div>
+      <div class="actions">
+        <button type="button" id="add" class="secondary">+ Add site</button>
+        <button type="submit">Save limits</button>
+      </div>
       <p id="notice" role="status" aria-live="polite"></p>
     </form>
+
     <p class="note">Include a domain (e.g. <strong>linkedin.com</strong>) to track it and all its subdomains. Only the active tab in the focused window counts, and timing pauses after 60 seconds without interaction. A five-minute active-use grace period is available once per site per day after the limit is reached. Removing a site does not erase today's recorded time if you add it back.</p>
   </main>
   <script src="core.js"></script>

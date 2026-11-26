@@ -8,10 +8,13 @@
   const focusToggle = document.getElementById('focus-toggle');
   const focusDuration = document.getElementById('focus-duration');
   const focusProgress = document.getElementById('focus-progress');
+  const focusFrequent = document.getElementById('focus-frequent');
+  const focusChips = document.getElementById('focus-chips');
   const focusCard = focusProgress.closest('.focus');
   const progressRects = focusProgress.querySelectorAll('rect');
   let focusActive = false;
   let currentFocusBlock = null;
+  let focusDomainCounts = {};
 
   function sizeFocusProgress() {
     for (const rect of progressRects) {
@@ -37,6 +40,38 @@
   setInterval(updateFocusProgress, 1000);
   document.addEventListener('visibilitychange', updateFocusProgress);
 
+  function updateFocusChipStates() {
+    const selected = C.focusInputDomains(focusInput.value);
+    for (const chip of focusChips.querySelectorAll('.focus-chip')) {
+      const added = selected.has(chip.dataset.domain);
+      chip.classList.toggle('is-added', added);
+      chip.disabled = focusActive || added;
+      chip.setAttribute('aria-pressed', String(added));
+    }
+  }
+
+  function renderFrequentDomains(counts) {
+    focusDomainCounts = counts && typeof counts === 'object' ? counts : {};
+    const top = C.topFocusDomains(focusDomainCounts, 10);
+    focusChips.replaceChildren();
+    focusFrequent.hidden = top.length === 0;
+    for (const { domain, count } of top) {
+      const chip = document.createElement('button');
+      chip.type = 'button';
+      chip.className = 'focus-chip';
+      chip.dataset.domain = domain;
+      chip.textContent = domain;
+      chip.title = `Used ${count} ${count === 1 ? 'time' : 'times'}`;
+      chip.addEventListener('click', () => {
+        if (focusActive) return;
+        focusInput.value = C.appendFocusDomain(focusInput.value, domain);
+        updateFocusChipStates();
+      });
+      focusChips.append(chip);
+    }
+    updateFocusChipStates();
+  }
+
   function renderFocus(block) {
     focusActive = !!block && block.until > Date.now();
     currentFocusBlock = focusActive ? block : null;
@@ -45,10 +80,14 @@
     if (focusActive) focusInput.value = block.domains.join(', ');
     focusStatus.textContent = focusActive ? `Focus block ends at ${new Date(block.until).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' })}.` : '';
     focusToggle.textContent = focusActive ? 'End focus block' : 'Start focusing';
+    updateFocusChipStates();
     updateFocusProgress();
   }
+  focusInput.addEventListener('input', updateFocusChipStates);
   chrome.storage.onChanged.addListener((changes, area) => {
-    if (area === 'local' && changes.focusBlock) renderFocus(changes.focusBlock.newValue);
+    if (area !== 'local') return;
+    if (changes.focusBlock) renderFocus(changes.focusBlock.newValue);
+    if (changes.focusDomainCounts) renderFrequentDomains(changes.focusDomainCounts.newValue);
   });
   focusToggle.addEventListener('click', async () => {
     focusToggle.disabled = true;
@@ -60,7 +99,10 @@
     } catch (error) { focusStatus.textContent = error.message; }
     finally { focusToggle.disabled = false; }
   });
-  chrome.storage.local.get('focusBlock').then(({ focusBlock }) => renderFocus(focusBlock));
+  chrome.storage.local.get(['focusBlock', 'focusDomainCounts']).then(({ focusBlock, focusDomainCounts }) => {
+    renderFrequentDomains(focusDomainCounts);
+    renderFocus(focusBlock);
+  });
   function row(domain = "", minutes = 60) {
     const el = document.createElement("div");
     el.className = "row";

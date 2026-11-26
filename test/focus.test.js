@@ -78,3 +78,32 @@ test('focus installs a main-frame redirect, does not charge usage, and removes t
   assert.equal(w.storage.focusBlock, undefined);
   assert.equal((await w.send('pulse', { visible: true, activity: true }, sender)).value.domain, 'linkedin.com');
 });
+
+test('focus tracks domain counts across sessions, keeps all domains, and ignores failed starts', async () => {
+  const w = worker({ focusDomainCounts: { 'linkedin.com': 2, 'news.ycombinator.com': 1 } });
+  assert.equal((await w.send('startFocusBlock', {
+    domains: ['https://www.linkedin.com/feed/', 'linkedin.com', 'x.com'],
+    minutes: 30
+  })).ok, true);
+  assert.deepEqual({ ...w.storage.focusDomainCounts }, {
+    'linkedin.com': 3,
+    'news.ycombinator.com': 1,
+    'x.com': 1
+  });
+  // Active focus block rejects another start without incrementing counts.
+  assert.equal((await w.send('startFocusBlock', { domains: ['x.com', 'reddit.com'], minutes: 30 })).ok, false);
+  assert.equal(w.storage.focusDomainCounts['x.com'], 1);
+  assert.equal(w.storage.focusDomainCounts['reddit.com'], undefined);
+
+  // Ending the block preserves all tracked counts.
+  await w.send('endFocusBlock');
+  assert.equal(w.storage.focusBlock, undefined);
+  assert.equal(w.storage.focusDomainCounts['linkedin.com'], 3);
+
+  // Adding more than 10 distinct domains retains every domain in storage.
+  const batch = Array.from({ length: 11 }, (_, i) => `d${i}.example`);
+  assert.equal((await w.send('startFocusBlock', { domains: batch, minutes: 30 })).ok, true);
+  assert.equal(Object.keys(w.storage.focusDomainCounts).length, 14);
+  assert.equal(AboveCore.topFocusDomains(w.storage.focusDomainCounts).length, 10);
+  assert.equal(AboveCore.topFocusDomains(w.storage.focusDomainCounts)[0].domain, 'linkedin.com');
+});
