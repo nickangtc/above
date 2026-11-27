@@ -50,7 +50,6 @@
   let lastInput = Date.now(); // Opening a tracked page counts as an interaction.
   let lastSentInput = 0;
   let busy = false;
-  let current = null;
   const localDay = () => {
     const d = new Date();
     return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
@@ -64,7 +63,6 @@
   function render(state) {
     // A delayed response from before midnight must not restore yesterday's grace UI.
     if (state && state.date !== localDay()) return;
-    current = state;
     if (!state) {
       bar.remove();
       overlay.remove();

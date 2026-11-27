@@ -31,7 +31,7 @@ test('yellow means quota fraction exceeds elapsed fraction of local day', () => 
   const s = C.status(site, u, now);
   assert.equal(s.yellow, true);
   assert.ok(s.etaMs > 0);
-  // With the agreed midnight-based linear rule, 15/60 < 8.5/24 at 8:30.
+  // At 8:30 AM, 15/60 (25%) is below the elapsed day fraction (~35%), so it stays blue.
   u.usedMs = 15 * 60_000;
   assert.equal(C.status(site, u, now).yellow, false);
   u.usedMs = 5 * 60_000;

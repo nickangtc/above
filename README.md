@@ -1,44 +1,55 @@
 # Above
 
-Above is a small, local-only Chrome extension for staying intentional about time spent on chosen websites. Set a daily budget for a domain (for example, one hour on LinkedIn), see your progress at the top of the page while you use it, and get a clear stopping point when the budget runs out. The goal is awareness and a useful nudge, not surveillance or tamper-proof enforcement.
+Above is a simple, private Chrome extension that helps you stay focused online in two ways:
 
-## Install and configure
+1. **Daily site limits** — Choose the sites you tend to overuse, set a daily time budget, and let Above keep track for you. A quiet progress bar shows how you're pacing, and a full-page pause steps in when your time is up.
+2. **Focus blocks** — Block distracting sites for a set stretch of time (30 minutes to 8 hours) whenever you need uninterrupted focus.
 
-1. In Chrome, visit `chrome://extensions` and enable **Developer mode**.
-2. Click **Load unpacked** and select this repository's `above` directory.
-3. Click the Above toolbar icon (or open **Details → Extension options**). Add a domain and its daily limit in minutes, then click **Save limits**. The initial `linkedin.com` / 60-minute row is only a suggestion; nothing is tracked until it is saved.
-4. Reload sites that were already open when you installed the extension so Chrome can inject the on-page UI. Subsequent changes to saved limits take effect in open tabs within five seconds.
+Everything stays in your browser. There are no accounts, no tracking, and no setup beyond loading the extension.
 
-A domain matches itself and its subdomains (`linkedin.com` includes `www.linkedin.com`), but not lookalike domains. You can add, edit, and remove up to 100 domains, with limits from 1 to 1440 minutes per day.
+## Getting started
 
-## How it works
+Above isn't on the Chrome Web Store yet, so you install it directly in Chrome in about a minute:
 
-- **Active time, not tab-open time.** Only the visible active tab in a focused Chrome window counts. Opening or refocusing it starts a session. Scrolling, mouse movement, clicking, typing, and touch renew activity; counting pauses 60 seconds after the last interaction, on leaving the site, or when the tab/window loses focus. Two tabs cannot double-count time.
-- **Live progress.** A thin bar spans the top of each tracked page. It refreshes every five seconds (at most roughly ten seconds of latency around browser scheduling). Blue is the default. Hover over or keyboard-focus the bar to see time used, time remaining, and a pacing explanation. At 90% of the budget it glimmers once every five seconds.
-- **Pacing warning.** Yellow means the fraction of the site's daily budget already used exceeds the fraction of the *local calendar day* already elapsed. This is a linear projection from midnight: if that average rate continues, the budget runs out before midnight. The tooltip estimates how long until that happens. This is a simple heuristic, not a prediction of what you will actually do next. For clarity, 15 minutes of a 60-minute budget at 8:30 AM is **blue** under this rule (25% used versus about 35% of the day elapsed), despite the original motivating example describing yellow; that example would require a different warning threshold or a different rate baseline.
-- **Limit and grace.** At the limit, an overlay blocks the page. You can claim one five-minute grace period **per site per day** to finish a post or reply. Only active use consumes those five minutes. When it expires, the overlay returns with no second claim. Each site's usage and grace reset at local midnight, including across browser restarts. If a tab was asleep across midnight, it clears the previous day's UI when it wakes and ignores any delayed status response from the old day.
+1. **Download Above:** Click the green **Code** button at the top of this page, choose **Download ZIP**, and unzip the downloaded folder. *(If you use Git, you can clone this repository instead.)*
+2. **Open Chrome Extensions:** Type `chrome://extensions` into Chrome's address bar and press Enter.
+3. **Turn on Developer mode:** Flip the **Developer mode** switch in the top-right corner.
+4. **Load the extension:** Click **Load unpacked** and select the unzipped `above` folder.
+5. **Open Above:** Click the **Above** icon in your Chrome toolbar (you can pin it from the puzzle-piece icon for quick access).
 
-## Privacy and limitations
+> If you already had sites open before installing, refresh those tabs once so Above can appear on them.
 
-Above has no account, backend, analytics, network requests, or telemetry. Settings and daily counters live in Chrome's local extension storage (`chrome.storage.local`). It doesn't read page content or record the text you type: interaction listeners only mark that an event occurred. To make new domains editable without repeatedly requesting permissions, Chrome injects a lightweight script on HTTP or HTTPS pages; that script only shows UI and counts time for saved domains. Chrome internal pages and other pages where Chrome disallows content scripts cannot be tracked.
+## How to use it
 
-This is a self-management tool: disabling the extension or modifying local storage defeats the block. If Chrome sleeps, closes, or suspends the service worker, Above does not charge a long unobserved interval as active time. The bar is an in-page overlay, so unusual browser top-layer UI may appear above it.
+### 1. Daily site limits
 
-## Development notes
+Use **Site limits** for sites you want to keep in your life, just in moderation (like LinkedIn, Reddit, or news sites).
 
-This is a plain JavaScript Manifest V3 extension with no dependencies or build step:
+- Add a website domain (for example `linkedin.com`) and your daily limit in minutes, then click **Save limits**.
+  - Entering `linkedin.com` automatically covers its subdomains too (such as `www.linkedin.com`).
+  - The starter `linkedin.com` / 60-minute row is just an example—nothing is tracked until you click **Save limits**.
+- **Only active time counts.** Above only counts time when the site is in your active, focused tab and you're actively using it. Time pauses automatically after 60 seconds without activity, or as soon as you switch tabs or windows.
+- **Subtle progress bar.** A thin bar runs along the top of tracked pages. Hover over it to see time used, time remaining, and your pace:
+  - **Blue** — You're on a sustainable pace for the day.
+  - **Yellow** — At today's pace, you're likely to run out before midnight.
+  - **Glimmer** — You've used 90% of today's budget.
+- **When time runs out.** Above covers the page to give you a clean stopping point. If you're mid-message, you can claim one **5-minute grace period** per site per day (only active use counts). Limits and grace periods reset at midnight in your local timezone, including if your computer or browser was asleep overnight.
 
-- `manifest.json` declares the extension, options page, content script, and service worker.
-- `content.js` collects interaction signals, requests a status every five seconds, and renders the bar, tooltip, and blocker in an isolated shadow root. It does not decide how much time to charge. It refreshes on page wake/focus and guards against stale prior-day responses so yesterday's grace UI cannot reappear after midnight.
-- `background.js` owns the authoritative counters, focus/tab transitions, daily grace claims, settings validation, and serialized writes to Chrome storage. The serialization prevents overlapping events from charging the same interval twice.
-- `core.js` contains the domain matching, local-day boundary, charging, and pacing rules; it is shared with the Node tests in `test/core.test.js`. Status includes its local calendar date so the content script can reject stale responses. Charging caps any unobserved gap at ten seconds, ends at the idle cutoff, and splits spans across local midnight (including DST boundaries).
-- `options.html`, `options.css`, and `options.js` provide the editable site list and focus controls. There is no bundler or package installation.
+### 2. Focus blocks
 
-Run checks from the repository root:
+Use **Focus block** when you want a distraction-free stretch of work without watching a timer.
 
-```sh
-node --test test/*.test.js
-for file in *.js test/*.js; do node --check "$file"; done
-```
+- Enter the sites you want to block (separated by commas), or click any of your **Frequently blocked** shortcuts once you've run a few sessions.
+- Choose a duration (**30 minutes**, **60 minutes**, **2 hours**, **4 hours**, or **8 hours**) and click **Start focusing**.
+- Any open tab on those sites—and any new visit while the block is active—is redirected to a calm reminder screen until time is up.
+- You can end a focus block early from the Above page if plans change. Sites blocked during a focus session won't count against your daily limits.
 
-After changing extension files, click **Reload** for Above at `chrome://extensions`, then reload the tab you're testing. For manual testing, use a short daily limit and check tab switches, idling, midnight rollover, blocking, and the one-time grace button. Note that a limit change does not erase today's recorded time.
+## Privacy & philosophy
+
+- **100% local.** Your settings, daily counters, and frequently blocked sites stay on your computer. Above makes no network requests and collects no analytics or telemetry.
+- **No content reading.** Above never reads the content of pages you visit or the text you type. It asks Chrome for broad website access only so you can add or change sites freely without Chrome prompting you for permissions every time.
+- **A nudge, not a lockbox.** Above is designed for awareness and gentle friction—not tamper-proof enforcement. You remain in control and can adjust limits, end a focus block, or disable the extension whenever you choose.
+
+## Contributing & technical notes
+
+Interested in how Above is designed, the reasoning behind its behavior, or running the tests locally? See [DESIGN.md](DESIGN.md).

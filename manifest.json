@@ -2,7 +2,7 @@
   "manifest_version": 3,
   "name": "Above",
   "version": "0.1.0",
-  "description": "Stay above your daily time limits on the sites you choose.",
+  "description": "Stay focused with daily site time limits and timed focus blocks.",
   "permissions": ["storage", "tabs", "alarms", "declarativeNetRequestWithHostAccess", "webNavigation"],
   "host_permissions": ["http://*/*", "https://*/*"],
   "web_accessible_resources": [
@@ -10,7 +10,7 @@
   ],
   "background": { "service_worker": "background.js" },
   "action": {
-    "default_title": "Above — manage site limits",
+    "default_title": "Above — focus blocks & site limits",
     "default_icon": {
       "16": "icons/icon-16.png",
       "32": "icons/icon-32.png"

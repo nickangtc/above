@@ -1,6 +1,5 @@
 importScripts("core.js");
 const C = globalThis.AboveCore;
-const HEARTBEAT_GAP_MS = 10_000;
 let sites = [];
 let usage = {};
 let session = null; // { tabId, domain, lastTick, lastActivity }
